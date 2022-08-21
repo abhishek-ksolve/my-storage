@@ -1,0 +1,94 @@
+import json
+import boto3
+import psycopg2
+client = boto3.client('glue')
+
+def lambda_handler(event,context):
+    print(event)
+    
+    GlueJobName=event["jobName"]+"ProblasticRecordLinkage"
+    jobDefinitionId=event["jobDefinitionId"]
+    Input1 = event["Input1"]
+    Input2 = event["Input2"]
+    primaryKey = event["primaryKey"]
+    output = event["output"]
+    blockingRule=event["blockingRule"]
+    comparisonColumn=event["comparisonColumn"]
+    emConvergence=event["emConvergence"]
+    maxIterations=event["maxIterations"]
+    col=json.dumps(comparisonColumn)
+    blockRule=json.dumps(blockingRule)
+
+    job_detail=client.create_job(
+    Name=GlueJobName,
+    Role='arn:aws:iam::905744249148:role/service-role/AWSGlueServiceRole-steerwise-demo-iamrole',
+    Command={
+        'Name': 'glueetl',
+        'ScriptLocation': 's3://steerwise-bucket/EventBridge/splink_api.py',
+        'PythonVersion': '3'
+    },
+    DefaultArguments={"--additional-python-modules":"splink==2.1.14"},
+    GlueVersion='3.0',
+    NumberOfWorkers=2,
+    WorkerType='G.1X')
+
+    myNewJobRun=client.start_job_run(
+        JobName=GlueJobName,
+        Arguments = {
+              '--Input1': Input1,
+              '--Input2': Input2,
+              '--PrimaryKey': primaryKey,
+              '--Output': output,
+              '--BlockingRule': blockRule,
+              '--ComparisonColumn':col,
+              '--EmConvergence':emConvergence,
+              '--MaxIterations':maxIterations
+              })
+              
+    job_id=myNewJobRun["JobRunId"]
+    job_status = client.get_job_run(JobName=GlueJobName,RunId=job_id)
+    print(job_status["JobRun"])
+    create_date=(job_status["JobRun"]["StartedOn"])
+    update_date=(job_status["JobRun"]["LastModifiedOn"])
+    JobRunState=(job_status["JobRun"]["JobRunState"])
+    
+    job_submission_details= {
+      "jobId": job_id,
+      "jobName": GlueJobName,
+     "algoName" : "ProblasticRecordLinkage"
+    }
+    jsonJobSubmissionDetails=(json.dumps(job_submission_details))
+
+    try:
+        
+        connection = psycopg2.connect(user="postgres",
+                                      password="Postgres121",
+                                      host="steerwise-dev.cluster-creeuf398buz.us-east-2.rds.amazonaws.com",
+                                      port="5432",
+                                      database="steerwise")
+        cursor = connection.cursor()
+        def er_job():
+            postgres_insert_query = """INSERT INTO er.job("jobDefinitionId","parentJobId", "createDate", "updateDate", status, "jobSubmissionId", "jobSubmissionDetails")VALUES (%s,%s,%s,%s,%s,%s,%s)"""
+            record_to_insert = (jobDefinitionId,jobDefinitionId,create_date,update_date,JobRunState,str(job_id),jsonJobSubmissionDetails)
+            cursor.execute(postgres_insert_query, record_to_insert)
+
+        er_job()
+        connection.commit()
+        count = cursor.rowcount
+        print(count, "Record inserted successfully into mobile table")
+
+    except (Exception, psycopg2.Error) as error:
+        print("Failed to insert record into mobile table", error)
+    
+    finally:
+        # closing database connection.
+        if connection:
+            cursor.close()
+            connection.close()
+            print("PostgreSQL connection is closed")
+	
+   
+              
+    return {
+    'statusCode': 200}
+

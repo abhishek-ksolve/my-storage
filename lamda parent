@@ -1,0 +1,84 @@
+import json
+import boto3
+import psycopg2
+lambda_client = boto3.client('lambda')
+
+
+def lambda_handler(event, context):
+    data = json.loads(event['body'])
+    
+    jobName=data["jobName"]
+    Input1=data["Input1"]
+    Input2=data["Input2"]
+    
+    input_param = {"Input1": Input1,"Input2": Input2,"jobName":jobName}
+    algoConfig={"config":data}
+    jsonAlgoConfig=(json.dumps(algoConfig))
+    
+    try:
+        
+        connection = psycopg2.connect(user="postgres",
+                                      password="Postgres121",
+                                      host="steerwise-dev.cluster-creeuf398buz.us-east-2.rds.amazonaws.com",
+                                      port="5432",
+                                      database="steerwise")
+        cursor = connection.cursor()
+       
+        postgres_insert_query = """INSERT INTO er.job_definition("datasourceId", "infraProviderId","algoConfig")VALUES (%s, %s, %s)"""
+        record_to_insert = (1,1,jsonAlgoConfig)
+        cursor.execute(postgres_insert_query, record_to_insert)
+        
+        sql = "SELECT currval(pg_get_serial_sequence('er.job_definition','id'))"
+        
+        cursor.execute(sql)
+        result = cursor.fetchall();
+        if result:
+            ls=([seq[0] for seq in result])
+            jobDefinitionId=ls[0]
+            print(jobDefinitionId)
+            
+            postgres_insert_query = """INSERT INTO er.job("jobDefinitionId")VALUES (%s)"""
+            record_to_insert=(jobDefinitionId,)
+            cursor.execute(postgres_insert_query, record_to_insert)
+            print("successfull")
+            
+
+    
+        connection.commit()
+        cursor.close()
+        connection.close()
+        
+        input_param_jobDefinitionId=input_param.update({"jobDefinitionId":jobDefinitionId})
+
+    except (Exception) as error:
+        print( error)
+    
+    finally:
+        print("ok")   
+        
+    try:
+        for algo_list in data['algorithms'][0].items():
+            if "Probabilistic record linkage" in algo_list:
+                print("yes")
+                probabilisticRecordLinkage=data['algorithms'][0]["Probabilistic record linkage"]
+                probabilisticRecordLinkage.update(input_param)
+                print(probabilisticRecordLinkage)
+                responseProbabilisticRecordLinkage = lambda_client.invoke(
+                FunctionName = 'arn:aws:lambda:us-east-1:905744249148:function:child',
+                InvocationType = 'RequestResponse',
+                Payload = json.dumps(probabilisticRecordLinkage))
+                responseFromChildLambda = json.load(responseProbabilisticRecordLinkage['Payload'])
+                
+            if "Blocking based schema-agnostic"in algo_list:
+                blockingBasedSchemaAgnostic=data['algorithms'][0]["Blocking based schema-agnostic"]
+                blockingBasedSchemaAgnostic.update(input_param)
+                responseBlockingBasedSchemaAgnostic = lambda_client.invoke(
+                FunctionName = 'arn:aws:lambda:us-east-1:905744249148:function:child2',
+                InvocationType = 'RequestResponse',
+                Payload = json.dumps(blockingBasedSchemaAgnostic))
+                responseFromChildLambda1 = json.load(responseBlockingBasedSchemaAgnostic['Payload'])
+    except (Exception) as error:
+        print( error)
+    
+    finally:
+        return {'statusCode': 200}
