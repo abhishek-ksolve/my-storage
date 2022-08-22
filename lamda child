@@ -2,12 +2,12 @@ import json
 import boto3
 import psycopg2
 client = boto3.client('glue')
-
 def lambda_handler(event,context):
     print(event)
     
     GlueJobName=event["jobName"]+"ProblasticRecordLinkage"
     jobDefinitionId=event["jobDefinitionId"]
+    parentJobId=event["parentJobId"]
     Input1 = event["Input1"]
     Input2 = event["Input2"]
     primaryKey = event["primaryKey"]
@@ -69,7 +69,7 @@ def lambda_handler(event,context):
         cursor = connection.cursor()
         def er_job():
             postgres_insert_query = """INSERT INTO er.job("jobDefinitionId","parentJobId", "createDate", "updateDate", status, "jobSubmissionId", "jobSubmissionDetails")VALUES (%s,%s,%s,%s,%s,%s,%s)"""
-            record_to_insert = (jobDefinitionId,jobDefinitionId,create_date,update_date,JobRunState,str(job_id),jsonJobSubmissionDetails)
+            record_to_insert = (jobDefinitionId,parentJobId,create_date,update_date,JobRunState,str(job_id),jsonJobSubmissionDetails)
             cursor.execute(postgres_insert_query, record_to_insert)
 
         er_job()
@@ -86,9 +86,10 @@ def lambda_handler(event,context):
             cursor.close()
             connection.close()
             print("PostgreSQL connection is closed")
+    
+   
 	
    
               
-    return {
-    'statusCode': 200}
+    return {'statusCode': 200,"job_submission_details":job_submission_details}
 
