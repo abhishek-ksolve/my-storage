@@ -1,0 +1,22 @@
+{
+    "Policy": {
+        "PolicyName": "EMRServerlessS3AndGlueAccessPolicy",
+        "PolicyId": "ANPA5FYUQOE6GLNYHZBVG",
+        "Arn": "arn:aws:iam::905744249148:policy/EMRServerlessS3AndGlueAccessPolicy",
+        "Path": "/",
+        "DefaultVersionId": "v1",
+        "AttachmentCount": 0,
+        "PermissionsBoundaryUsageCount": 0,
+        "IsAttachable": true,
+        "CreateDate": "2022-06-09T12:21:01+00:00",
+        "UpdateDate": "2022-06-09T12:21:01+00:00"
+    }
+
+aws iam attach-role-policy \
+    --role-name EMRServerlessS3RuntimeRole \
+    --policy-arn "arn:aws:iam::905744249148:policy/EMRServerlessS3AndGlueAccessPolicy"
+    
+    aws emr-serverless create-application \
+--name serverless-demo-spark \
+--type SPARK \
+--release-label "emr-6.6.0" 

@@ -1,0 +1,32 @@
+{
+    "jobName": "job012334",
+    "dataset1": "s3://steerwise-bucket/splink/Splink_ER/input/10k_data.csv",
+    "output": "s3://steerwise-bucket/output/",
+    "uniqueId":"unique_id",
+    "algorithms": [
+      {
+        "Probabilistic record linkage": {
+          "blockingRule": [
+            "l.store_name = r.store_name"
+          ],
+          "comparisonColumn": [
+            {
+              "col_name": "store_name",
+              "num_levels": 4,
+              "term_frequency_adjustments": true
+            },
+            {
+              "col_name": "address"
+            },
+            {
+              "col_name": "zip_code"
+            }
+          ],
+          "emConvergence": "0.01",
+          "maxIterations": "4",
+          "threshold": "0.5"
+        }
+      }
+    ]
+   }
+   

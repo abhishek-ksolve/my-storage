@@ -1,0 +1,19 @@
+aws emr-serverless start-job-run  --application-id 00f2el24ga0h2809 --execution-role-arn arn:aws:iam::905744249148:role/EMRServerlessS3RuntimeRole \
+    --job-driver '{
+        "sparkSubmit": {
+          "entryPoint": "s3://eks-emr-spark/emr-spark-test_2.12-0.1.0-SNAPSHOT.jar",
+          "sparkSubmitParameters": "--conf spark.executor.cores=1 --conf spark.executor.memory=4g --conf spark.driver.cores=1 --conf spark.driver.memory=4g --conf spark.executor.instances=1"
+        }
+    }' \
+    --configuration-overrides '{
+        "monitoringConfiguration": {
+          "s3MonitoringConfiguration": {
+            "logUri": "s3://DOC-EXAMPLE-BUCKET/emr-serverles-spark/logs"
+          }
+        }
+    }'
+    
+    
+    
+    
+aws emr-serverless start-job-run  --application-id 00f2el24ga0h2809 --execution-role-arn arn:aws:iam::905744249148:role/EMRServerlessS3RuntimeRole  --job-driver '{ "sparkSubmit": { "entryPoint": "s3://steerwise-bucket/scripts/wordcount.py", "entryPointArguments": ["s3://steerwise-bucket/emr-serverless-spark/output"], "sparkSubmitParameters": "--conf spark.executor.cores=1 --conf spark.executor.memory=4g --conf spark.driver.cores=1 --conf spark.driver.memory=4g --conf spark.executor.instances=1" } }'  --configuration-overrides '{ "monitoringConfiguration": { "s3MonitoringConfiguration": { "logUri": "s3://steerwise-bucket/emr-serverles-spark/logs" } } }'

@@ -1,0 +1,5 @@
+user="postgres"
+password="Postgres121"
+host="steerwise-dev.cluster-creeuf398buz.us-east-2.rds.amazonaws.com"
+database = "steerwise"
+schema = "er"

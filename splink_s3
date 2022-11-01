@@ -1,0 +1,50 @@
+import sys
+from awsglue.transforms import *
+from awsglue.utils import getResolvedOptions
+from pyspark.context import SparkContext
+from awsglue.context import GlueContext
+from splink import Splink
+import json
+from urllib.request import urlopen
+from awsglue.job import Job
+from boto3 import client
+
+## @params: [JOB_NAME]
+args = getResolvedOptions(sys.argv, ['JOB_NAME'])
+
+
+
+sc = SparkContext()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+job = Job(glueContext)
+BUCKET = 'steerwise-bucket'
+FILE_TO_READ = 'splink/input_data/app.json'
+client = client('s3',
+                 aws_access_key_id='AKIA5FYUQOE6KKEFWNYH',
+                 aws_secret_access_key='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'
+                )
+result = client.get_object(Bucket=BUCKET, Key=FILE_TO_READ) 
+json_content = result["Body"].read().decode()
+data = json.loads(json_content)
+file_url = data["local_data_dir"]
+output = data["output"]
+link_type = data["link_type"]
+blocking_rule = data["blocking_rule"]
+comparison_column=data["comparison_column"]
+
+df = spark.read.option("header", "true").csv(file_url)
+
+settings = {
+                "link_type": link_type,
+                "blocking_rules": [blocking_rule
+                ],
+                "comparison_columns": comparison_column
+
+            }
+
+linker = Splink(settings,df, spark)
+df_e = linker.get_scored_comparisons()
+df_e.coalesce(1).write.format("csv").option("header","true").mode("overwrite").save(output)
+job.init(args['JOB_NAME'], args)
+job.commit()
