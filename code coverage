@@ -1,0 +1,16 @@
+python -m coverage run --source=./tests -m unittest discover -s tests/ && coverage report
+
+python -m unittest discover 'project_dedupe/tests' 'testcase1.py'
+
+python -m coverage run --source=/home/abhishekks446/pyspark/my_project_dir/project_dedupe/tests -m unittest discover -s tests/ && coverage report
+
+
+python -m coverage run --source=project_dedupe/tests -m unittest discover  'project_dedupe/tests' 'testcase*.py' && coverage report
+
+
+python -m coverage run --source=project_dedupe/tests -m unittest discover && coverage report
+
+
+
+python setup.py bdist_wheel
+
