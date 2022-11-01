@@ -1,0 +1,13 @@
+{
+	"input_1": "s3://steerwise-bucket/dedupe/DedupeRecordLink/Input/10k_data.csv",
+    "input_2":"s3://steerwise-bucket/dedupe/DedupeRecordLink/Input/10k_data_2.csv",
+    "primary_key": "unique_id",
+    "Constraint":"many-to-one",
+	"output": "s3://steerwise-bucket/dedupe/DedupeRecordLink/output/ManyToOne/",
+	"Fields":[
+                {"field" : "store_name", "type": "String"},
+                {"field" : "zip_code", "type": "String"},
+                {"field" : "address", "type": "String"}
+                ]
+
+}
