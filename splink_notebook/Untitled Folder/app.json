@@ -1,0 +1,11 @@
+{
+	"input": "/home/abhishekks446/data/output/10k_data.csv",
+    "primary_key": "unique_id",
+	"output": "/home/abhishekks446/data/output/",
+	"Fields":[
+                {"field" : "store_name", "type": "String"},
+                {"field" : "zip_code", "type": "String","has missing" : true},
+                {"field" : "address", "type": "Exact", "has missing" : true}
+                ]
+
+}
